@@ -1,0 +1,14 @@
+.hidden {
+    background-color: silver;
+}
+
+.mine {
+    background-color: red;
+}
+
+td {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #ccc;
+    text-align: center;
+}
