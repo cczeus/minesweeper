@@ -1,110 +1,129 @@
-
-function Minesweeper(rows, cols, mines) {
-    this.rows = rows;
-    this.cols = cols;
-    this.mines = mines;
-    this.gameover = false;
-    this.win = false;
-    this.board = initBoard();
+class Square {
+    constructor(row, col) {
+        this.row = row;
+        this.col = col;
+        this.mine = false;
+        this.value = 0;
+        this.visible = false;
+    }
 }
 
-function Square(row, col) {
-    this.row = row;
-    this.col = col;
-    this.mine = false;
-    this.value = 0;
-    this.visible = false;
-}
+class Board {
+    constructor(rows, cols, mines) {
+        this.rows = rows;
+        this.cols = cols;
+        this.mines = mines;
+        this.board = this.initBoard();
+        this.visibleTiles = rows * cols;
+        this.placeMines();
+    }
 
-function initBoard() {
-    var board = [];
-    for(var r = 0; r < this.rows; r++) {
-        var row = [];
-        for(var c = 0; c < this.cols; c++) {
-            row.push(new Square(r, c));
+    initBoard() {
+        let board = [];
+        for(let r = 0; r < this.rows; r++) {
+            let row = [];
+            for(let c = 0; c < this.cols; c++) {
+                row.push(new Square(r, c));
+            }
+            board.push(row);
         }
-        board.push(row);
+        return board;
     }
-    return board;
-}
 
-Minesweeper.prototype.increment = function(r, c) {
-    if(r >= 0 && r < this.rows && c >= 0 && c < this.cols) {
-        this.board[r][c].value++;
-    }
-}
-
-Minesweeper.prototype.flood = function(r, c) {
-    if(r >= 0 && r < this.rows && c >= 0 && c < this.cols && !this.board[r][c].visible) {
-        this.board[r][c].visible = true;
-        if(this.board[r][c].value === 0) {
-            this.flood(r - 1, c - 1);
-            this.flood(r - 1, c);
-            this.flood(r - 1, c + 1);
-            this.flood(r, c - 1);
-            this.flood(r, c + 1);
-            this.flood(r + 1, c - 1);
-            this.flood(r + 1, c);
-            this.flood(r + 1, c + 1);
+    placeMines() {
+        let squares = generateUniqueRandomValues(this.rows * this.cols, this.mines);
+        for(let i = 0; i < squares.length; i++) {
+            let r = Math.floor(squares[i] / this.cols);
+            let c = squares[i] % this.rows;
+            this.board[r][c].mine = true;
+            this.board[r][c].value++;
+            this.incrementSquareValue(r - 1, c - 1);
+            this.incrementSquareValue(r - 1, c);
+            this.incrementSquareValue(r - 1, c + 1);
+            this.incrementSquareValue(r, c - 1);
+            this.incrementSquareValue(r, c + 1);
+            this.incrementSquareValue(r + 1, c - 1);
+            this.incrementSquareValue(r + 1, c);
+            this.incrementSquareValue(r + 1, c + 1);
         }
     }
-};
 
-Minesweeper.prototype.checkGameOver = function() {
-    var count = 0;
-    for(var r = 0; r < this.rows; r++) {
-        for(var c = 0; c < this.cols; c++) {
-            count+= this.board[r][c].visible ? 0 : 1;
-            // If a bomb blew up
-            if(this.board[r][c].mine && this.board[r][c].visible) {
-                this.win = false;
-                this.gameover = true;
-                return;
+    incrementSquareValue(r, c) {
+        if(r >= 0 && r < this.rows && c >= 0 && c < this.cols) {
+            this.board[r][c].value++;
+        }
+    }
+
+    flood(r, c) {
+        if(r >= 0 && r < this.rows && c >= 0 && c < this.cols && !this.board[r][c].visible) {
+            this.board[r][c].visible = true;
+            this.visibleTiles--;
+            if(this.board[r][c].value === 0) {
+                this.flood(r - 1, c - 1);
+                this.flood(r - 1, c);
+                this.flood(r - 1, c + 1);
+                this.flood(r, c - 1);
+                this.flood(r, c + 1);
+                this.flood(r + 1, c - 1);
+                this.flood(r + 1, c);
+                this.flood(r + 1, c + 1);
             }
         }
     }
-    // If bombs are the only non-visible tiles
-    if(count == this.mines) {
-        this.win = true;
-        this.gameover = true;
-        return;
-    }
-    this.gameover = false;
-};
 
-Minesweeper.prototype.newGame = function() {
-    this.gameover = false;
-    var squares = [];
-    for(var r = 0; r < this.rows; r++) {
-        for(var c = 0; c < this.rows; c++) {
-            this.board[r][c].visible = false;
-            this.board[r][c].mine = false;
-            this.board[r][c].value = 0;
-            squares.push(this.board[r][c]);
+    reveal(r, c) {
+        if(r < 0 || r >= this.rows || c < 0 && c >= this.cols) throw 'Invalid Move';
+        if(this.board[r][c].visible) throw 'Tile Already Visible';
+        if(this.board[r][c].value === 0) {
+            this.flood(r, c);
+            return false;
+        } else {
+            this.board[r][c].visible = true;
+            this.visibleTiles--;
+            return this.board[r][c].mine;
         }
     }
-    for(var i = 0; i < this.mines; i++) {
-        var sq = squares.splice(Math.floor(Math.random() * squares.length), 1)[0];
-        sq.mine = true;
-        this.increment(sq.row - 1, sq.col - 1);
-        this.increment(sq.row - 1, sq.col);
-        this.increment(sq.row - 1, sq.col + 1);
-        this.increment(sq.row, sq.col - 1);
-        this.increment(sq.row, sq.col + 1);
-        this.increment(sq.row + 1, sq.col - 1);
-        this.increment(sq.row + 1, sq.col);
-        this.increment(sq.row + 1, sq.col + 1);
-    }
-};
+}
 
-Minesweeper.prototype.move = function(r, c) {
-    if(this.gameover) throw 'Game Already Over';
-    if(r < 0 || r >= this.rows || c < 0 && c >= this.cols) throw 'Invalid Move';
-    if(this.board[r][c].visible) throw 'Tile Already Visible';
-    if(this.board[r][c].value === 0) {
-        this.flood(r, c)
-    } else {
-        this.board[r][c].visible = true;
+class Minesweeper {
+    constructor(rows, cols, mines) {
+        this.gameover = false;
+        this.win = true;
+        this.board = new Board(rows, cols, mines);
     }
-    this.checkGameOver();
-};
+
+    changeSettings(rows, cols, mines) {
+        if(mines > rows * cols / 2) {
+            throw 'Too Many Mines';
+        }
+        this.board = new Board(rows, cols, mines);
+    }
+
+    move(r, c) {
+        if(this.gameover) throw 'Game Already Over';
+        let isMine = this.board.reveal(r, c);
+        if(isMine || this.board.mines == this.board.visibleTiles) {
+            this.gameover = true;
+            if(isMine) {
+                this.win = false;
+            }
+        }
+    }
+
+    newGame() {
+        this.gameover = false;
+        this.win = true;
+        this.board = new Board(this.board.rows, this.board.cols, this.board.mines);
+    }
+}
+
+function generateUniqueRandomValues(max, num) {
+    let squares = [];
+    while(squares.length < num) {
+        let rand = Math.floor(Math.random() * max);
+        if(squares.indexOf(rand) == -1) {
+            squares.push(rand);
+        }
+    }
+    return squares;
+}

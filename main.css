@@ -6,9 +6,65 @@
     background-color: red;
 }
 
+.game {
+    flex-basis: auto;
+    width: 60vw;
+    height: 60vh;
+    margin: 0;
+}
+
+.inprogress {
+    color: yellow;
+}
+
+.win {
+    color: green;
+}
+
+.lose {
+    color: red;
+}
+
+.block {
+    flex: 1 100%;
+}
+
+.main {
+    flex-direction: row;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-start;
+}
+
+#board {
+    display: table;
+    margin: 0 auto;
+}
+
 td {
-    width: 20px;
-    height: 20px;
     border: 1px solid #ccc;
     text-align: center;
+    height: 10px;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: flex-start;
+    width: 100vw;
+    height: 100vh;
+}
+
+div {
+    margin: 0;
+}
+
+table {
+    width: 100%;
+    height: 100%;
+}
+
+tr {
+    width: 10%;
 }
