@@ -34,7 +34,7 @@ class Board {
         let squares = generateUniqueRandomValues(this.rows * this.cols, this.mines);
         for(let i = 0; i < squares.length; i++) {
             let r = Math.floor(squares[i] / this.cols);
-            let c = squares[i] % this.rows;
+            let c = squares[i] % this.cols;
             this.board[r][c].mine = true;
             this.board[r][c].value++;
             this.incrementSquareValue(r - 1, c - 1);

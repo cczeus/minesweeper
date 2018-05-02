@@ -33,6 +33,9 @@ module.exports = {
         ],
         "no-unused-vars": [
             "off"
+        ],
+        "no-cond-assign": [
+            "off"
         ]
     }
 };

@@ -1,22 +1,38 @@
+/* Minesweeper AI
+ * Written using Tensorflow.js
+ * TODO: Split this up into View and Controller
+ * Add 1ms interval between every 10 training sessions to allow for page updating of log/progress bar
+ * Add two sections: one for graphs, one for current status
+ */
+
+
+'use strict';
+
 let board = [];
 let Game = null;
 let nn = null;
-let scale = 0;
-let limitedByHeight = true;
+
+let defaults = {
+    rows: 8,
+    cols: 8,
+    mines: 10
+};
 
 function init() {
-    Game = new Minesweeper(8, 8, 10);
+    Game = new Minesweeper(30, 30, 75);
     nn = new NeuralNetwork();
     board = document.getElementById('game');
-    board.id = 'game';
-    board.className = 'board';
     for(var r = 0; r < Game.board.rows; r++) {
-        var tr = board.appendChild(document.createElement('tr'));
+        var row = board.appendChild(document.createElement('div'));
+        row.className = 'row';
         for(var c = 0; c < Game.board.cols; c++) {
-            var sq = tr.appendChild(document.createElement('td'));
+            var sq = row.appendChild(document.createElement('div'));
+            sq.className = 'col';
+            sq.col = c;
+            sq.row = r;
             sq.addEventListener('click', function(e) {
-                var r = e.target.parentNode.rowIndex;
-                var c = e.target.cellIndex;
+                var r = e.srcElement.row;
+                var c = e.srcElement.col;
                 Game.move(r, c);
                 drawBoard();
                 checkGameoverState();
@@ -24,34 +40,33 @@ function init() {
         }
     }
     drawBoard();
-    // updateStatus('In Progess', 'inprogress');
+    resize();
     var styleEl = document.createElement('style');
     document.head.appendChild(styleEl);
     let rpct = 100 / Game.board.cols;
     let cpct = 100 / Game.board.rows;
-    let rule = 'td { max-width: ' + rpct + '% } tr { max-height: ' + cpct + '% }';
-    console.log(rule);
+    let rule = '.col { width: ' + rpct + '%; max-width: ' + rpct + '% } .row { height: ' + cpct + '%; max-height: ' + cpct + '% }';
     styleEl.innerHTML = rule;
 }
 
 function drawBoard() {
     var board = document.getElementById('game');
     let b = Game.board;
-    for (var r = 0, row; row = board.rows[r]; r++) {
-        for (var c = 0, sq; sq = row.cells[c]; c++) {
-            board.rows[r].cells.item(c).style.backgroundColor = '';
+    for (var r = 0, row; row = board.children[r]; r++) { //eslint ignore no-cond-assign
+        for (var c = 0, sq; sq = row.children[c]; c++) {
+            sq.style.backgroundColor = '';
             if (! b.board[r][c].visible) {
                 sq.innerHTML = ' ';
-                sq.className = 'hidden';
+                sq.className = 'hidden col';
             } else if(b.board[r][c].mine) {
                 sq.innerHTML = '*';
-                sq.className = 'mine';
+                sq.className = 'mine col';
             } else if(b.board[r][c].value === 0) {
                 sq.innerHTML = ' ';
-                sq.className = '';
+                sq.className = 'col';
             } else {
                 sq.innerHTML = b.board[r][c].value;
-                sq.className = '';
+                sq.className = 'col';
             }
         }
     }
@@ -59,22 +74,28 @@ function drawBoard() {
 
 function resize() {
     let board = document.getElementById('game');
-    limitedByHeight = board.offsetHeight / Game.board.rows > board.offsetWidth / Game.board.cols;
-    if(limitedByHeight) {
-        scale = 10;
+    board.style.width = '';
+    board.style.height = '';
+    let width, height;
+    if(board.offsetHeight / Game.board.rows > board.offsetWidth / Game.board.cols) {
+        height = board.offsetWidth * Game.board.rows / Game.board.cols - 1;
+        width = board.offsetWidth - 1;
     } else {
-        scale = 10;
+        height = board.offsetHeight - 1;
+        width = board.offsetHeight * Game.board.cols / Game.board.rows - 1;
     }
+    board.style.width = width + 'px';
+    board.style.height = height + 'px';
 }
 
 function checkGameoverState() {
-    if(Game.gameover) {
-        if(Game.win) {
-            updateStatus('You Won!', 'win');
-        } else {
-            updateStatus('You Lose.', 'lose');
-        }
-    }
+    // if(Game.gameover) {
+    //     if(Game.win) {
+    //         updateStatus('You Won!', 'win');
+    //     } else {
+    //         updateStatus('You Lose.', 'lose');
+    //     }
+    // }
 }
 
 function updateStatus(text, className) {
@@ -83,14 +104,24 @@ function updateStatus(text, className) {
     status.className = className;
 }
 
+function log(str) {
+    var log = document.getElementById('log');
+    var message = document.createElement('div');
+    message.className = 'message';
+    message.innerHTML = str;
+    log.appendChild(message);
+}
+
 function newGame() {
     Game.newGame();
     drawBoard();
-    updateStatus('In Progress', 'inprogress');
+    // updateStatus('In Progress', 'inprogress');
 }
 
 init();
 
+
+// TODO: Clean Up
 function getSquareArea(row, col) {
     let arr = [];
     for(let r = row - 2; r < row + 3; r++) {
@@ -130,7 +161,7 @@ function drawPredictions() {
     for(let r = 0; r < Game.board.rows; r++) {
         for(let c = 0; c < Game.board.cols; c++) {
             if(!Game.board.board[r][c].visible) {
-                let cell = board.rows[r].cells.item(c);
+                let cell = board.children[r].children[c];
                 let prediction = nn.predict(getSquareArea(r, c)).dataSync()[0];
                 cell.style.backgroundColor = numberToColorHsl(1 - prediction);
             }
@@ -157,7 +188,7 @@ function train() {
     for(let r = 0; r < Game.board.rows; r++) {
         for(let c = 0; c < Game.board.cols; c++) {
             if(!Game.board.board[r][c].visible) {
-                let cell = board.rows[r].cells.item(c);
+                let cell = board.children[r].children[c];
                 trainingData[0].push(getSquareArea(r, c));
                 trainingData[1].push([Game.board.board[r][c].mine ? 1 : 0]);
             }
@@ -196,8 +227,14 @@ function trainOneGame() {
 function trainOneHundredGames() {
     let wins = 0;
     let losses = 0;
-    for(i = 0; i < 1000; i++) {
-        if(i % 10 == 0) console.log(i);
+    for(let i = 0; i < 100; i++) {
+        if(i % 10 == 0) {
+            setTimeout(function(){
+                // do other things
+                message('Completed: ' + i);
+                console.log(i);
+            }, 0);
+        }
         Game.newGame();
         trainGame() ? wins++ : losses++;
     }
@@ -205,6 +242,13 @@ function trainOneHundredGames() {
     drawPredictions();
     console.log('Wins: ' + wins);
     console.log('Losses: ' + losses);
+}
+
+function message(str) {
+    let log = document.getElementById('log');
+    let p = document.createElement('p');
+    p.innerHTML = str;
+    log.appendChild(p);
 }
 
 function numberToColorHsl(i) {

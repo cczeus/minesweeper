@@ -4,28 +4,31 @@
         <title>Minesweeper Neural Network</title>
         <link rel="stylesheet" type="text/css" href="main.css">
     </head>
-    <body>
-        <div class="main" style="flex: 1 70%">
-            <div class="block" style="flex: 1 40%; height: 60%; overflow-y: auto;">
-                <label>Log</label>
+    <body onresize="resize()">
+        <div id="main">
+            <div id="log">
+                <p class="message">First message in the log!</p>
+                <p class="message">This is a rather long winded second message that should span multiple lines</p>
+                <p class="message">Most Recent Training Set of 100 Games:</p>
+                <p class="message">Wins: 8</p>
+                <p class="message">Losses: 92</p>
             </div>
-            <div class="block game" style="flex: 1 60%; height: 60%">
+            <div id="board">
                 <!-- <label>Status: <div id="status"></div></label> -->
                 <table id="game" class="board"></table>
             </div>
-            <div class="block" style="width: 100%; height: 40%">
-                <button onclick="newGame()">New Game</button>
-                <button onclick="drawPredictions()">Predict</button>
-                <button onclick="train()">Train</button>
-                <button onclick="trainOneGame()">Train Single Game</button>
-                <button onclick="trainOneHundredGames()">Train 100 Games</button>
+            <div id="controls">
+                <div class="button" onclick="newGame()">New Game</div>
+                <div class="button" onclick="drawPredictions()">Predict</div>
+                <div class="button" onclick="train()">Train</div>
+                <div class="button" onclick="trainOneGame()">Train Single Game</div>
+                <div class="button" onclick="trainOneHundredGames()">Train 100 Games</div>
             </div>
         </div>
-        <div style="width: 30%; height: 100%"></div>
+        <div id="description"><a href="https://trello.com/b/z3RMN9cT/minesweeper-ai">https://trello.com/b/z3RMN9cT/minesweeper-ai</a></div>
         <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.8.0"></script>
         <script src="neuralnetwork.js"></script>
         <script src="minesweeper.js"></script>
         <script src="index.js"></script>
-
     </body>
 </html>
